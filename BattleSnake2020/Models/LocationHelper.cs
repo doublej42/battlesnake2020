@@ -27,9 +27,26 @@ namespace BattleSnake2020.Models
             return totalDistance / points.Length;
         }
 
+        public static double AverageDistancePow(this Location start, Location[] points, double pow)
+        {
+            if (points.Length == 0) return 0;
+            double totalDistance = 0;
+            foreach (var point in points)
+            {
+                totalDistance = Math.Pow(1 + start.Distance(point),pow);
+            }
+
+            return totalDistance / points.Length;
+        }
+
         public static bool Collide(this Location start, Location[] points)
         {
             return points.Any(point => start.X == point.X & start.Y == point.Y);
+        }
+
+        public static double MinDistance(this Location start, Location[] points)
+        {
+            return points.Select(start.Distance).Concat(new[] {double.MaxValue}).Min();
         }
 
         public static Location GetHead(this Location[] points)
@@ -64,6 +81,17 @@ namespace BattleSnake2020.Models
         {
             var ret = new List<Location>();
             foreach (var snake in snakes)
+            {
+                ret.AddRange(snake.Body);
+            }
+
+            return ret.ToArray();
+        }
+
+        public static Location[] AllOtherSnakePoints(this Snake.Snake[] snakes, Snake.Snake mySnake)
+        {
+            var ret = new List<Location>();
+            foreach (var snake in snakes.Where(s => s.Id != mySnake.Id))
             {
                 ret.AddRange(snake.Body);
             }

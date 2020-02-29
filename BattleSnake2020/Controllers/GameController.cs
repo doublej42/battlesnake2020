@@ -20,15 +20,16 @@ namespace BattleSnake2020.Controllers
             {
                 Color = "#240A40",
                 HeadType = "dead",
-                TailType = "block-bum"
+                TailType = "pixel"
             };
         }
 
         [HttpPost("move")]
         public ReturnMove Move(GameState gameState)
         {
-            const double snakeRiskFactor = 1;
-            const double wallRiskFactor = 1;
+            const double snakeRiskFactor = 2;
+            const double wallRiskFactor = 2;
+            const double foodRiskFactor = 4;
 
             var scoring = new Dictionary<string,double>();
             var head = gameState.You.Body.GetHead();
@@ -38,20 +39,28 @@ namespace BattleSnake2020.Controllers
                 var nextLocation = head.NextLocation(direction);
                 var allSnakes = gameState.Board.Snakes.AllPoints();
                 var allWalls = gameState.Board.AllWalls();
-                var badScore = nextLocation.AverageDistance(allSnakes);
-                var goodScore = nextLocation.AverageDistance(gameState.Board.Food);
-                var wallScore = nextLocation.AverageDistance(allWalls);
+                var snakeScore = nextLocation.AverageDistancePow(allSnakes, snakeRiskFactor);
+                var wallScore = nextLocation.AverageDistancePow(allWalls, wallRiskFactor);
+                var foodScore = nextLocation.AverageDistancePow(gameState.Board.Food, foodRiskFactor);
+                
                 //scoring[direction.Value] = -1 * goodScore;
 
                 //A high score is good
-                scoring[direction.Value] = (badScore * snakeRiskFactor)  + (wallScore * wallRiskFactor)  - goodScore;
+                scoring[direction.Value] = snakeScore + wallScore - foodScore;
                 if (nextLocation.Collide(allSnakes) || nextLocation.Collide(allWalls))
                 {
                     scoring[direction.Value] = long.MinValue;
                 }
+
+                var allOtherSnakes = gameState.Board.Snakes.AllOtherSnakePoints(gameState.You);
+                var minSnake = nextLocation.MinDistance(allOtherSnakes);
+                if (minSnake < 2)
+                {
+                    scoring[direction.Value] += minSnake;
+                }
                 Console.WriteLine("Turn:" + gameState.Turn + " Direction: " + direction.Value 
-                                  + " goodScore:" + goodScore
-                                  + " badScore:" + badScore
+                                  + " foodScore:" + foodScore
+                                  + " snakeScore:" + snakeScore
                                   + " wallScore:" + wallScore
                                   + " score:" + scoring[direction.Value]);
                 if (scoring[bestMove.Value] < scoring[direction.Value])
