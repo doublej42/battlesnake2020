@@ -28,8 +28,8 @@ namespace BattleSnake2020.Controllers
         public ReturnMove Move(GameState gameState)
         {
             const double snakeRiskFactor = 2.5;
-            const double wallRiskFactor = 1;
-            const double foodRiskFactor = 2.7;
+            const double wallRiskFactor = 1.5;
+            const double foodRiskFactor = 2;
 
             var scoring = new Dictionary<string,double>();
             var head = gameState.You.Body.GetHead();
@@ -41,12 +41,12 @@ namespace BattleSnake2020.Controllers
                 var allWalls = gameState.Board.AllWalls();
                 var snakeScore = nextLocation.AverageDistancePow(allSnakes, snakeRiskFactor);
                 var wallScore = nextLocation.AverageDistancePow(allWalls, wallRiskFactor);
-                var foodScore = nextLocation.AverageDistancePow(gameState.Board.Food, foodRiskFactor);
+                var foodScore = nextLocation.AverageDistancePowInverse(gameState.Board.Food, foodRiskFactor, gameState.Board);
                 
                 //scoring[direction.Value] = -1 * goodScore;
 
                 //A high score is good
-                scoring[direction.Value] = snakeScore + wallScore - foodScore;
+                scoring[direction.Value] = snakeScore + wallScore + foodScore;
 
                 var allOtherLargerSnakeHeads = gameState.Board.Snakes.AllOtherLargerSnakeHeads(gameState.You);
                 var minSnake = nextLocation.MinDistance(allOtherLargerSnakeHeads);
@@ -55,7 +55,7 @@ namespace BattleSnake2020.Controllers
                     Console.WriteLine("Too close to other snake:"  + minSnake);
                     scoring[direction.Value] = -10000000 + 100 * minSnake;
                 }
-
+                
                 // var allOtherSmallerSnakeHeads = gameState.Board.Snakes.AllOtherSmallerSnakeHeads(gameState.You);
                 // var minSmallerSnake = nextLocation.MinDistance(allOtherSmallerSnakeHeads);
                 // if (minSmallerSnake <= 2)
@@ -63,16 +63,25 @@ namespace BattleSnake2020.Controllers
                 //     Console.WriteLine("MURDER!!:" + minSmallerSnake);
                 //     scoring[direction.Value] = scoring[direction.Value] * 10;
                 // }
-
-                if (nextLocation.Collide(allSnakes) || nextLocation.Collide(allWalls))
+                var allOtherSnakes = gameState.Board.Snakes.AllOtherSnakePoints(gameState.You);
+                var allBad = allSnakes.Union(allWalls).ToArray();
+                
+                var closestCollision = nextLocation.CollideDepth(allBad);
+                if (closestCollision < 5)
+                {
+                    scoring[direction.Value] = -10000000 + closestCollision;
+                }
+                if (nextLocation.Collide(allBad))
                 {
                     scoring[direction.Value] = -10000000;
                 }
+                
                 Console.WriteLine("Turn:" + gameState.Turn + " Direction: " + direction.Value 
                                   + " foodScore:" + foodScore
                                   + " snakeScore:" + snakeScore
                                   + " wallScore:" + wallScore
-                                  + " score:" + scoring[direction.Value]);
+                                  + " score:" + scoring[direction.Value]
+                                  + " closestCollision: "+ closestCollision);
                 if (scoring[bestMove.Value] < scoring[direction.Value])
                 {
                     

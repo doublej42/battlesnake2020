@@ -11,8 +11,8 @@ namespace BattleSnake2020.Models
     {
         public static double Distance(this Location start, Location destination)
         {
-            return Math.Sqrt(Math.Pow(Math.Abs((double) (start.X - destination.X)), 2) +
-                             Math.Pow(Math.Abs((double) (start.Y - destination.Y)), 2));
+            return Math.Sqrt(Math.Pow(Math.Abs((double)(start.X - destination.X)), 2) +
+                             Math.Pow(Math.Abs((double)(start.Y - destination.Y)), 2));
         }
 
         public static double AverageDistance(this Location start, Location[] points)
@@ -33,10 +33,50 @@ namespace BattleSnake2020.Models
             double totalDistance = 0;
             foreach (var point in points)
             {
-                totalDistance = Math.Pow(1 + start.Distance(point),pow);
+                totalDistance = Math.Pow(1 + start.Distance(point), pow);
             }
 
             return totalDistance / points.Length;
+        }
+
+        public static double AverageDistancePowInverse(this Location start, Location[] points, double pow, Board board)
+        {
+            if (points.Length == 0) return 0;
+            var zero = new Location()
+            {
+                X = 0,
+                Y = 0
+            };
+            var bottomCorner = new Location()
+            {
+                X = board.Width,
+                Y = board.Height
+            };
+            var maxDistance = zero.Distance(bottomCorner);
+            double totalDistance = 0;
+            foreach (var point in points)
+            {
+                totalDistance = Math.Pow(maxDistance - start.Distance(point), pow);
+            }
+
+            return totalDistance / points.Length;
+        }
+
+        public static int CollideDepth(this Location start, Location[] points, int depth = 1)
+        {
+            if (depth > 10) return depth;
+            if (start.Collide(points))
+            {
+                return depth;
+            }
+            //Console.WriteLine("CollideDepth:"+depth+ ","+ start.X + "^" + start.Y);
+            var maxDepth = depth;
+            foreach (var direction in Direction.All)
+            {
+                var nextLocation = start.NextLocation(direction);
+                maxDepth = Math.Max(maxDepth, nextLocation.CollideDepth(points, depth + 1));
+            }
+            return maxDepth;
         }
 
         public static bool Collide(this Location start, Location[] points)
@@ -46,7 +86,7 @@ namespace BattleSnake2020.Models
 
         public static double MinDistance(this Location start, Location[] points)
         {
-            return points.Select(start.Distance).Concat(new[] {double.MaxValue}).Min();
+            return points.Select(start.Distance).Concat(new[] { double.MaxValue }).Min();
         }
 
         public static Location GetHead(this Location[] points)
@@ -56,10 +96,10 @@ namespace BattleSnake2020.Models
 
         public static Location NextLocation(this Location start, Direction direction)
         {
-            
+
             if (direction.Value == Direction.Up.Value)
             {
-                return new Location {X = start.X , Y = start.Y - 1};
+                return new Location { X = start.X, Y = start.Y - 1 };
             }
             if (direction.Value == Direction.Down.Value)
             {
@@ -67,11 +107,11 @@ namespace BattleSnake2020.Models
             }
             if (direction.Value == Direction.Left.Value)
             {
-                return new Location { X = start.X - 1, Y = start.Y};
+                return new Location { X = start.X - 1, Y = start.Y };
             }
             if (direction.Value == Direction.Right.Value)
             {
-                return new Location { X = start.X + 1, Y = start.Y};
+                return new Location { X = start.X + 1, Y = start.Y };
             }
 
             return start;
@@ -132,12 +172,12 @@ namespace BattleSnake2020.Models
             var ret = new List<Location>();
             for (var x = 0; x < board.Width; x++)
             {
-                ret.Add(new Location { X = x, Y = -1});
+                ret.Add(new Location { X = x, Y = -1 });
                 ret.Add(new Location { X = x, Y = board.Height });
             }
             for (var y = 0; y < board.Height; y++)
             {
-                ret.Add(new Location { X = -1, Y = y});
+                ret.Add(new Location { X = -1, Y = y });
                 ret.Add(new Location { X = board.Width, Y = y });
             }
             return ret.ToArray();
