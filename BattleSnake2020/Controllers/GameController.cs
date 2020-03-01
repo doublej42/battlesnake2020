@@ -27,9 +27,9 @@ namespace BattleSnake2020.Controllers
         [HttpPost("move")]
         public ReturnMove Move(GameState gameState)
         {
-            const double snakeRiskFactor = 2;
-            const double wallRiskFactor = 2;
-            const double foodRiskFactor = 4;
+            const double snakeRiskFactor = 2.5;
+            const double wallRiskFactor = 1;
+            const double foodRiskFactor = 2.7;
 
             var scoring = new Dictionary<string,double>();
             var head = gameState.You.Body.GetHead();
@@ -47,16 +47,26 @@ namespace BattleSnake2020.Controllers
 
                 //A high score is good
                 scoring[direction.Value] = snakeScore + wallScore - foodScore;
-                if (nextLocation.Collide(allSnakes) || nextLocation.Collide(allWalls))
+
+                var allOtherLargerSnakeHeads = gameState.Board.Snakes.AllOtherLargerSnakeHeads(gameState.You);
+                var minSnake = nextLocation.MinDistance(allOtherLargerSnakeHeads);
+                if (minSnake <= 1)
                 {
-                    scoring[direction.Value] = long.MinValue;
+                    Console.WriteLine("Too close to other snake:"  + minSnake);
+                    scoring[direction.Value] = -10000000 + 100 * minSnake;
                 }
 
-                var allOtherSnakes = gameState.Board.Snakes.AllOtherSnakePoints(gameState.You);
-                var minSnake = nextLocation.MinDistance(allOtherSnakes);
-                if (minSnake < 2)
+                // var allOtherSmallerSnakeHeads = gameState.Board.Snakes.AllOtherSmallerSnakeHeads(gameState.You);
+                // var minSmallerSnake = nextLocation.MinDistance(allOtherSmallerSnakeHeads);
+                // if (minSmallerSnake <= 2)
+                // {
+                //     Console.WriteLine("MURDER!!:" + minSmallerSnake);
+                //     scoring[direction.Value] = scoring[direction.Value] * 10;
+                // }
+
+                if (nextLocation.Collide(allSnakes) || nextLocation.Collide(allWalls))
                 {
-                    scoring[direction.Value] += minSnake;
+                    scoring[direction.Value] = -10000000;
                 }
                 Console.WriteLine("Turn:" + gameState.Turn + " Direction: " + direction.Value 
                                   + " foodScore:" + foodScore
@@ -65,13 +75,11 @@ namespace BattleSnake2020.Controllers
                                   + " score:" + scoring[direction.Value]);
                 if (scoring[bestMove.Value] < scoring[direction.Value])
                 {
-                    Console.WriteLine("Best Move:" + direction.Value);
+                    
                     bestMove = direction;
                 }
-
-               
             }
-
+            Console.WriteLine("Best Move:" + bestMove.Value);
             return new ReturnMove{Move = bestMove.Value, Shout = ""};
         }
 

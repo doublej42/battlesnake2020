@@ -99,6 +99,34 @@ namespace BattleSnake2020.Models
             return ret.ToArray();
         }
 
+        public static Location[] AllOtherLargerSnakeHeads(this Snake.Snake[] snakes, Snake.Snake mySnake)
+        {
+            var ret = new List<Location>();
+            foreach (var snake in snakes.Where(s => s.Id != mySnake.Id))
+            {
+                if (mySnake.Body.Length <= snake.Body.Length)
+                {
+                    var snakeHead = snake.Body.GetHead();
+                    ret.Add(snakeHead);
+                }
+            }
+            return ret.ToArray();
+        }
+
+        public static Location[] AllOtherSmallerSnakeHeads(this Snake.Snake[] snakes, Snake.Snake mySnake)
+        {
+            var ret = new List<Location>();
+            foreach (var snake in snakes.Where(s => s.Id != mySnake.Id))
+            {
+                if (mySnake.Body.Length > snake.Body.Length)
+                {
+                    var snakeHead = snake.Body.GetHead();
+                    ret.Add(snakeHead);
+                }
+            }
+            return ret.ToArray();
+        }
+
         public static Location[] AllWalls(this Board board)
         {
             var ret = new List<Location>();
